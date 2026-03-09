@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔍 Local RAG
+# Local RAG
 
 ### Privacy-First Retrieval-Augmented Generation System
 
@@ -55,35 +55,35 @@ Local RAG is an end-to-end **Retrieval-Augmented Generation** application that r
 
 ```
 User uploads document
-        │
-        ▼
+ │
+ ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│  INGESTION PIPELINE                                               │
-│                                                                    │
-│  1. Text extraction   (PyPDF2 per page / UTF-8 for text files)   │
-│  2. Chunking          (~900 tokens, overlapping windows)         │
-│  3. Embedding         (nomic-embed-text via Ollama, batched)     │
-│  4. Storage           (chunks + vector(768) → PostgreSQL)        │
+│ INGESTION PIPELINE │
+│ │
+│ 1. Text extraction (PyPDF2 per page / UTF-8 for text files) │
+│ 2. Chunking (~900 tokens, overlapping windows) │
+│ 3. Embedding (nomic-embed-text via Ollama, batched) │
+│ 4. Storage (chunks + vector(768) → PostgreSQL) │
 └───────────────────────────────┬──────────────────────────────────┘
-                                │  Document status: INDEXED
-                                ▼
+ │ Document status: INDEXED
+ ▼
 User asks a question
-        │
-        ▼
+ │
+ ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│  QUERY PIPELINE                                                    │
-│                                                                    │
-│  1. Embed question    (same nomic-embed-text model)              │
-│  2. Vector search     (pgvector cosine similarity, top-K=6)      │
-│  3. Similarity gate   (threshold=0.30 — below → NOT_FOUND)       │
-│  4. Context assembly  (ranked chunks → source block)             │
-│  5. LLM generation    (llama3.1:8b / llama3.3:70b via Ollama)   │
-│  6. Citation extract  (chunk id, page, match %, snippet)         │
-│  7. Persist           (message + citations_json → PostgreSQL)    │
+│ QUERY PIPELINE │
+│ │
+│ 1. Embed question (same nomic-embed-text model) │
+│ 2. Vector search (pgvector cosine similarity, top-K=6) │
+│ 3. Similarity gate (threshold=0.30 — below → NOT_FOUND) │
+│ 4. Context assembly (ranked chunks → source block) │
+│ 5. LLM generation (llama3.1:8b / llama3.3:70b via Ollama) │
+│ 6. Citation extract (chunk id, page, match %, snippet) │
+│ 7. Persist (message + citations_json → PostgreSQL) │
 └───────────────────────────────┬──────────────────────────────────┘
-                                │
-                                ▼
-           Answer with inline citations returned to UI
+ │
+ ▼
+ Answer with inline citations returned to UI
 ```
 
 ---
@@ -92,42 +92,42 @@ User asks a question
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Browser (React 18)                            │
-│                                                                   │
-│  React Router v7 · AuthContext (JWT) · UploadDropzone           │
-│  DocumentList · ChatPage (model toggle, temp slider, citations)  │
+│ Browser (React 18) │
+│ │
+│ React Router v7 · AuthContext (JWT) · UploadDropzone │
+│ DocumentList · ChatPage (model toggle, temp slider, citations) │
 └────────────────────┬────────────────────────────────────────────┘
-                     │  /api/* (Vite dev proxy → :8000)
-                     ▼
+ │ /api/* (Vite dev proxy → :8000)
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    FastAPI (Uvicorn, async)                       │
-│                                                                   │
-│  Routers: auth · documents · indexing · rag · chats · health    │
-│                                                                   │
-│  Application layer (use cases):                                  │
-│    IndexDocumentUseCase   ← ingestion orchestration              │
-│    RAGQueryUseCase        ← query orchestration                  │
-│                                                                   │
-│  Infrastructure:                                                  │
-│    OllamaEmbeddingClient  ·  OllamaLLMClient                    │
-│    LlamaCppLLMClient      ·  PgvectorRetriever                   │
-│    ChunkingService        ·  TextExtractor  ·  FileStorage       │
+│ FastAPI (Uvicorn, async) │
+│ │
+│ Routers: auth · documents · indexing · rag · chats · health │
+│ │
+│ Application layer (use cases): │
+│ IndexDocumentUseCase ← ingestion orchestration │
+│ RAGQueryUseCase ← query orchestration │
+│ │
+│ Infrastructure: │
+│ OllamaEmbeddingClient · OllamaLLMClient │
+│ LlamaCppLLMClient · PgvectorRetriever │
+│ ChunkingService · TextExtractor · FileStorage │
 └────────────────────┬────────────────────────────────────────────┘
-                     │  asyncpg (SQLAlchemy async)
-                     ▼
+ │ asyncpg (SQLAlchemy async)
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    PostgreSQL + pgvector                          │
-│                                                                   │
-│  users · documents · chunks · chunk_embeddings (vector(768))    │
-│  chats · messages (citations_json JSONB)                         │
+│ PostgreSQL + pgvector │
+│ │
+│ users · documents · chunks · chunk_embeddings (vector(768)) │
+│ chats · messages (citations_json JSONB) │
 └─────────────────────────────────────────────────────────────────┘
-                     │  httpx (async)
-                     ▼
+ │ httpx (async)
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│   Ollama (localhost:11434)                                        │
-│   • nomic-embed-text  — embedding generation                     │
-│   • llama3.1:8b       — fast inference                          │
-│   • llama3.3:70b      — accurate inference                      │
+│ Ollama (localhost:11434) │
+│ • nomic-embed-text — embedding generation │
+│ • llama3.1:8b — fast inference │
+│ • llama3.3:70b — accurate inference │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -166,13 +166,13 @@ User asks a question
 
 ```
 users
-  └── documents  (status: UPLOADED → INDEXING → INDEXED | FAILED)
-        └── chunks
-              └── chunk_embeddings  (vector(768), pgvector)
+ └── documents (status: UPLOADED → INDEXING → INDEXED | FAILED)
+ └── chunks
+ └── chunk_embeddings (vector(768), pgvector)
 
 users
-  └── chats
-        └── messages  (role, content, citations_json JSONB, answer_status)
+ └── chats
+ └── messages (role, content, citations_json JSONB, answer_status)
 ```
 
 | Table | Key Columns |
@@ -209,11 +209,11 @@ users
 
 ```json
 {
-  "chat_id": "uuid",
-  "question": "What is the conclusion of the paper?",
-  "scope": { "mode": "all" },
-  "model_mode": "fast",
-  "temperature": 0.7
+ "chat_id": "uuid",
+ "question": "What is the conclusion of the paper?",
+ "scope": { "mode": "all" },
+ "model_mode": "fast",
+ "temperature": 0.7
 }
 ```
 
@@ -221,17 +221,17 @@ users
 
 ```json
 {
-  "answer": "The paper concludes that...",
-  "answer_status": "ANSWERED",
-  "citations": [
-    {
-      "chunk_id": "uuid",
-      "document_name": "paper.pdf",
-      "page_number": 12,
-      "similarity_score": 0.87,
-      "snippet": "In conclusion, the results demonstrate..."
-    }
-  ]
+ "answer": "The paper concludes that...",
+ "answer_status": "ANSWERED",
+ "citations": [
+ {
+ "chunk_id": "uuid",
+ "document_name": "paper.pdf",
+ "page_number": 12,
+ "similarity_score": 0.87,
+ "snippet": "In conclusion, the results demonstrate..."
+ }
+ ]
 }
 ```
 
@@ -250,8 +250,8 @@ users
 
 ```bash
 ollama pull nomic-embed-text
-ollama pull llama3.1:8b          # fast mode
-ollama pull llama3.3:70b         # accurate mode (optional, requires ~40GB RAM)
+ollama pull llama3.1:8b # fast mode
+ollama pull llama3.3:70b # accurate mode (optional, requires ~40GB RAM)
 ```
 
 ### 2. Clone & Set Up Backend
@@ -280,7 +280,7 @@ JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_EMBED_MODEL=nomic-embed-text
 
-LLM_RUNTIME=ollama          # "ollama" | "llamacpp"
+LLM_RUNTIME=ollama # "ollama" | "llamacpp"
 LLM_BASE_URL=http://localhost:11434
 LLM_FAST_MODEL=llama3.1:8b
 LLM_ACCURATE_MODEL=llama3.3:70b
@@ -319,35 +319,35 @@ Frontend at `http://localhost:5173` · API at `http://localhost:8000`
 ```
 rag-local-app/
 ├── apps/
-│   ├── api/                                    # FastAPI backend (clean architecture)
-│   │   ├── main.py                             # App factory — router registration
-│   │   ├── core/                               # Config, DB session, JWT helpers
-│   │   ├── domain/models/                      # SQLAlchemy ORM models
-│   │   ├── application/
-│   │   │   ├── interfaces/                     # Abstract EmbeddingClient, LLMClient
-│   │   │   └── use_cases/                      # IndexDocumentUseCase, RAGQueryUseCase,
-│   │   │                                       # AuthUseCase, DocumentUseCases, ChatUseCases
-│   │   ├── infrastructure/
-│   │   │   ├── embedding/ollama_client.py      # Batched /api/embed calls
-│   │   │   ├── llm/                            # OllamaLLMClient · LlamaCppLLMClient
-│   │   │   ├── pgvector_retriever.py           # Cosine similarity search
-│   │   │   ├── chunking_service.py             # Overlapping word-based chunker
-│   │   │   ├── text_extractor.py               # PyPDF2 + plain text
-│   │   │   └── repositories/                   # Async SQLAlchemy repos
-│   │   └── interfaces/api/                     # FastAPI routers + Pydantic schemas
-│   │       └── auth · documents · indexing · rag · chats · health
-│   │
-│   └── web/                                    # React 18 SPA
-│       └── src/
-│           ├── pages/                          # LoginPage, SignupPage, DashboardPage,
-│           │                                   # ChatLayout, ChatPage
-│           ├── components/                     # Navbar, DocumentList, UploadDropzone,
-│           │                                   # ChatSidebar, ProtectedRoute
-│           ├── contexts/AuthContext.jsx         # JWT token state
-│           └── lib/api.js                      # Fetch wrapper with auth injection
+│ ├── api/ # FastAPI backend (clean architecture)
+│ │ ├── main.py # App factory — router registration
+│ │ ├── core/ # Config, DB session, JWT helpers
+│ │ ├── domain/models/ # SQLAlchemy ORM models
+│ │ ├── application/
+│ │ │ ├── interfaces/ # Abstract EmbeddingClient, LLMClient
+│ │ │ └── use_cases/ # IndexDocumentUseCase, RAGQueryUseCase,
+│ │ │ # AuthUseCase, DocumentUseCases, ChatUseCases
+│ │ ├── infrastructure/
+│ │ │ ├── embedding/ollama_client.py # Batched /api/embed calls
+│ │ │ ├── llm/ # OllamaLLMClient · LlamaCppLLMClient
+│ │ │ ├── pgvector_retriever.py # Cosine similarity search
+│ │ │ ├── chunking_service.py # Overlapping word-based chunker
+│ │ │ ├── text_extractor.py # PyPDF2 + plain text
+│ │ │ └── repositories/ # Async SQLAlchemy repos
+│ │ └── interfaces/api/ # FastAPI routers + Pydantic schemas
+│ │ └── auth · documents · indexing · rag · chats · health
+│ │
+│ └── web/ # React 18 SPA
+│ └── src/
+│ ├── pages/ # LoginPage, SignupPage, DashboardPage,
+│ │ # ChatLayout, ChatPage
+│ ├── components/ # Navbar, DocumentList, UploadDropzone,
+│ │ # ChatSidebar, ProtectedRoute
+│ ├── contexts/AuthContext.jsx # JWT token state
+│ └── lib/api.js # Fetch wrapper with auth injection
 │
-└── storage/uploads/                            # Local file storage (gitignored)
-    └── <user_id>/<doc_id>/<filename>
+└── storage/uploads/ # Local file storage (gitignored)
+ └── <user_id>/<doc_id>/<filename>
 ```
 
 ---
